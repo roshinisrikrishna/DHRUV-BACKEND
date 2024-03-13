@@ -10,7 +10,7 @@ const cors = require("cors"); // Import CORS
 
     // Define CORS options
     const corsOptions = {
-      origin: ['http://192.168.29.239:8000','https://dhruvcraftshouse.com','http://195.35.20.220:8000'], // Allowed origins
+      origin: ['http://192.168.29.239:8000','https://dhruvcraftshouse.com','http://195.35.20.220:8000','https://dhruvcraftshouse.com/store','https://dhruvcraftshouse.com/admin'], // Allowed origins
     };
 
     app.use(cors(corsOptions)); // Use CORS middleware with specified options
