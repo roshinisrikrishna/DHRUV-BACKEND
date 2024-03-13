@@ -1,27 +1,32 @@
+// Imports the axios library to make HTTP requests.
 import axios from 'axios';
 
-// Function to log in to ShipRocket and get a token
+// Asynchronously logs in to ShipRocket to obtain an authentication token using provided credentials.
 const loginAndGetToken = async () => {
+    // Formats login credentials as a JSON string.
     const loginData = JSON.stringify({
         "email": "roshinitharanair@gmail.com",
         "password": "Vishal8398"
     });
 
     try {
+        // Makes a POST request to Shiprocket's login endpoint with credentials and returns the authentication token.
         const response = await axios.post('https://apiv2.shiprocket.in/v1/external/auth/login', loginData, {
             headers: { 'Content-Type': 'application/json' }
         });
 
         return response.data.token;
     } catch (error) {
+        // Logs any errors encountered during the login process.
         console.error('Login error:', error);
-        throw error;
+        throw error; // Rethrows the error for further handling.
     }
 };
 
-// Function to get the ID of the first active channel
+// Asynchronously fetches the ID of the first active channel from ShipRocket using the provided authentication token.
 const getFirstActiveChannelId = async (token) => {
     try {
+        // Makes a GET request to Shiprocket's channels endpoint, authorized with the obtained token.
         const response = await axios.get('https://apiv2.shiprocket.in/v1/external/channels', {
             headers: {
                 'Content-Type': 'application/json',
@@ -29,65 +34,68 @@ const getFirstActiveChannelId = async (token) => {
             }
         });
 
+        // Finds the first active channel from the response data and returns its ID, or null if not found.
         const activeChannel = response.data.data.find(channel => channel.status === 'Active');
         return activeChannel ? activeChannel.id : null;
     } catch (error) {
+        // Logs any errors encountered while fetching channel information.
         console.error('Error fetching channels:', error);
-        throw error;
+        throw error; // Rethrows the error for further handling.
     }
 };
 
-// Function to fetch all orders from ShipRocket
+// Asynchronously fetches all orders from ShipRocket using the authentication token.
 const fetchAllOrders = async () => {
     try {
-      const token = await loginAndGetToken();
-      if (token) {
-        const response = await axios.get('https://apiv2.shiprocket.in/v1/external/orders', {
+        const token = await loginAndGetToken(); // Obtains the authentication token.
+        if (token) {
+            // Makes a GET request to Shiprocket's orders endpoint, authorized with the token.
+            const response = await axios.get('https://apiv2.shiprocket.in/v1/external/orders', {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+    
+            return response.data; // Returns the fetched order data.
+        } else {
+            console.error('Failed to login and obtain token');
+        }
+    } catch (error) {
+        // Logs any errors encountered while fetching orders.
+        console.error('Error fetching orders:', error);
+        throw error; // Rethrows the error for further handling.
+    }
+};
+
+// Asynchronously assigns a courier and generates an AWB for a shipment in ShipRocket using the shipment ID, courier ID, and authentication token.
+const assignCourierAndGenerateAWB = async (shipmentId, courierId, token) => {
+    // Prepares data for the POST request to assign a courier and generate an AWB.
+    const postData = {
+      "shipment_id": shipmentId,
+      "courier_id": courierId,
+      "status": "reassign",
+      "is_return": "1" // Marks the shipment as a return, modify as needed.
+    };
+
+    try {
+        // Makes a POST request to Shiprocket's endpoint for courier assignment and AWB generation.
+        const response = await axios.post('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', postData, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         });
-  
-        // console.log('Orders fetched successfully:', response.data);
-        return response.data; // or handle the data as needed
-      } else {
-        console.error('Failed to login and obtain token');
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      throw error;
-    }
-  };
-  
- // Function to assign courier and generate AWB
-const assignCourierAndGenerateAWB = async (shipmentId, courierId, token) => {
 
-    const postData = {
-      "shipment_id": shipmentId,
-      "courier_id": courierId,
-      "status": "reassign",
-      "is_return": "1" // Assuming you want to mark this as a return shipment, change as per your requirement
-    };
-  
-    console.log('postData', postData)
-    try {
-      const response = await axios.post('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', postData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-  
-      console.log('response assignCourierAndGenerateAWB', response)
-      return response.data; // Return the response data for further processing
+        return response.data; // Returns the response data for further processing.
     } catch (error) {
-      console.error('Error assigning courier and generating AWB:', error);
-      throw error;
+        // Logs any errors encountered during courier assignment and AWB generation.
+        console.error('Error assigning courier and generating AWB:', error);
+        throw error; // Rethrows the error for further handling.
     }
-  }; 
+};
 
-// Function to create a new order on ShipRocket
+// Asynchronously creates a new order on ShipRocket using request and response objects, the authentication token, and channel ID.
 const createNewOrder = async (req,res,token, channelId) => {
 
     try {

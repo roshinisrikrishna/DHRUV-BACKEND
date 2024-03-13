@@ -1,10 +1,12 @@
+// Import axios for making HTTP requests and Medusa for e-commerce operations.
 import axios from 'axios';
 import Medusa from "@medusajs/medusa-js";
 
+// Constants for Medusa backend URL and initialization of Medusa client.
 const MEDUSA_BACKEND_URL = "http://195.35.20.220:9000";
 const medusa = new Medusa({ baseUrl: MEDUSA_BACKEND_URL, maxRetries: 3 })
 
-// Function to log in to ShipRocket and get a token
+// Asynchronously logs in to ShipRocket to obtain an authentication token.
 const loginAndGetToken = async () => {
     const loginData = JSON.stringify({
         "email": "roshinitharanair@gmail.com",
@@ -23,7 +25,7 @@ const loginAndGetToken = async () => {
     }
 };
 
-// Function to get the ID of the first active channel
+// Asynchronously retrieves the first active channel ID from ShipRocket using the authentication token.
 const getFirstActiveChannelId = async (token) => {
     try {
         const response = await axios.get('https://apiv2.shiprocket.in/v1/external/channels', {
@@ -41,7 +43,7 @@ const getFirstActiveChannelId = async (token) => {
     }
 };
 
-// Function to generate a pickup for an order
+// Asynchronously generates a pickup request for an order shipment on ShipRocket.
 const generatePickup = async (token, shipmentId) => {
     console.log('shipmentId', shipmentId)
     const pickupData = {
@@ -65,8 +67,14 @@ const generatePickup = async (token, shipmentId) => {
 };
 
 
-// Function to create a new order on ShipRocket
+// Asynchronously creates a new order on ShipRocket, including shipping and courier details.
 const shipNewOrder = async (req, res, token, channelId) => {
+    // Omitted detailed comments for brevity, similar to the above functions, this section includes:
+    // - Logging the channel ID.
+    // - Extracting order details and courier ID from the request.
+    // - Constructing the data payload for creating a shipment.
+    // - Making a POST request to ShipRocket to create the shipment.
+    // - Handling and logging the response or errors accordingly.
 
     try {
 
@@ -143,7 +151,10 @@ const shipNewOrder = async (req, res, token, channelId) => {
     }
 };
 
+// Asynchronously generates an invoice on ShipRocket for specified order IDs.
 const generateInvoice = async (token, orderIds) => {
+    // Similar process as above functions, specifically tailored to invoice generation.
+    // Involves constructing invoice data, setting headers, making a POST request, and handling the response or errors.
     const invoiceData = {
         "ids": orderIds // Array of order IDs
     };
@@ -163,8 +174,16 @@ const generateInvoice = async (token, orderIds) => {
     }
 };
 
-// Function to create a new order on ShipRocket and generate pickup
+// Main function to execute the complete process including order shipment, pickup generation, and potentially creating a fulfillment in Medusa.
 export const executeOrderShipment = async (req, res) => {
+    // The function embodies a comprehensive process:
+    // 1. Authenticates with ShipRocket to obtain a token.
+    // 2. Retrieves an active channel ID.
+    // 3. Proceeds with shipping the order using the `shipNewOrder` function.
+    // 4. Based on the shipment response, it attempts to generate a pickup.
+    // 5. Logs and handles responses from the shipment and pickup steps.
+    // 6. Conditionally, if Medusa operations are required, it authenticates and performs order fulfillment on Medusa.
+    // 7. Returns success response or handles errors appropriately.
     try {
         const token = await loginAndGetToken();
         const channelId = await getFirstActiveChannelId(token);

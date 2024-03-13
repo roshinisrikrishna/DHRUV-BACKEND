@@ -1,13 +1,17 @@
+// Import statements to include necessary services, types, and utilities from Medusa and other libraries.
 import { MedusaRequest, MedusaResponse } from "@medusajs/medusa";
 import Medusa from "@medusajs/medusa-js";
 import { handleEmail } from "./vipEmailSender";
-// Define a type for the objects in customerData
-type CustomerData = {
-    count: number;
-    totalAmount: number;
-    customerId: string; // Add this line
-  };
 
+// Define a TypeScript type for customer data objects, ensuring type safety for operations involving customer data.
+type CustomerData = {
+    count: number; // Number of orders placed by the customer.
+    totalAmount: number; // Total amount spent by the customer.
+    customerId: string; // Unique identifier of the customer.
+};
+
+
+  // Handles GET requests; checks for customer_id in query params and fetches customer groups to identify if a customer belongs to a specific group.
 export async function GET(
     req: MedusaRequest,
     res: MedusaResponse
@@ -69,6 +73,7 @@ export async function GET(
  }
 }
 
+// Handles POST requests; performs operations related to order processing and dynamic management of VIP customer groups based on predefined criteria.
 export async function POST(
   req: MedusaRequest,
   res: MedusaResponse

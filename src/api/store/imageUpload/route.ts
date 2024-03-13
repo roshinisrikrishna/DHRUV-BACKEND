@@ -1,79 +1,72 @@
-// Import necessary types and services
-import type { MedusaRequest, MedusaResponse } from "@medusajs/medusa"
-import { ColorImageRepository } from "../../../repositories/color_image"
-import { EntityManager, Like } from "typeorm"
-import ColorImageService from "src/services/color_image"
-import formidable from "formidable"
-import path from "path"
-import fs from "fs/promises"
+// Import necessary types from Medusa and other utilities for working with the file system and forms.
+import type { MedusaRequest, MedusaResponse } from "@medusajs/medusa";
+import formidable from "formidable"; // For parsing form data, including file uploads.
+import path from "path"; // Provides utilities for working with file and directory paths.
+import fs from "fs/promises"; // File System module with Promise-based API for working with the file system.
 
+// Function to handle file reading from a request with optional saving to a local directory.
 const readFile = (req: MedusaRequest, saveLocally?: boolean): Promise<{fields: formidable.Fields; files: formidable.Files}> => {
-    const options: formidable.Options = {};
+    const options: formidable.Options = {}; // Formidable options.
 
     if (saveLocally) {
-        // Directly use the absolute path for 'uploadDir'
+        // Set the directory where files should be uploaded.
         options.uploadDir = "C://Users//Roshini//Downloads//dhruv//dhruv-webstore//uploads";
-
+        // Define how uploaded files are named.
         options.filename = (name, ext, path, form) => {
-            return Date.now().toString() + "_" + path.originalFilename;
+            return Date.now().toString() + "_" + path.originalFilename; // Unique filename based on the timestamp.
         };
     }
 
+    // Initialize Formidable with the specified options.
     const form = formidable(options);
 
+    // Parse the incoming form data.
     return new Promise((resolve, reject) => {
         form.parse(req, (err, fields, files) => {
-            if (err) reject(err);
-            resolve({fields, files});
+            if (err) reject(err); // Reject the promise on error.
+            resolve({fields, files}); // Resolve with the parsed fields and files.
         });
     });
 };
-// Define a global variable to store the dirs
+
+// Global variable to cache directory contents, demonstrating a basic caching strategy.
 let dirsCache = [];
 
-// export const getServerSideProps: GetServerSideProps = async () => {
-//     try {
-//       // Use only the absolute path without process.cwd()
-//       const mediaDir = "C://Users//Roshini//Downloads//kamyaarts//hugo-boss-admin//uploads";
-//       const dirs = await fs.readdir(mediaDir);
-//       dirsCache = dirs;
-  
-//       return { props: { dirs: dirsCache } };
-//     } catch (error) {
-//       console.error("Error reading directory:", error);
-//       return { props: { dirs: [] } };
-//     }
-//   }
-
+// Main function for handling the POST request.
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     console.log('POST method at imageUpload');
+    // Define the media directory where files will be uploaded.
     const mediaDir = "C://Users//Roshini//Downloads//dhruv//dhruv-webstore//uploads";
   
     try {
+      // Attempt to read the directory, which will throw an error if it doesn't exist.
       await fs.readdir(mediaDir);
     } catch (error) {
+      // If the directory doesn't exist, create it including any necessary parent directories.
       await fs.mkdir(mediaDir, { recursive: true });
     }
   
     try {
+      // Read and process the uploaded file.
       const { files } = await readFile(req, true);
   
-      // Assuming the file is uploaded with the key 'myImage'
-      const uploadedFile = files.myImage[0];  // Adjust according to your files structure
+      // Assuming a file was uploaded with the form key 'myImage'.
+      const uploadedFile = files.myImage[0]; // Adjust according to your form structure.
   
-      // Check if the file exists in the upload directory
-      const filePath = uploadedFile.filepath;  // Get the path where the file is stored
-      const fileExists = await fs.stat(filePath);  // This will throw if the file does not exist
+      // Get the path of the uploaded file.
+      const filePath = uploadedFile.filepath;
+      // Check if the file exists, which throws if the file does not exist.
+      await fs.stat(filePath);
   
-      console.log('filePath', filePath)
-      // Generate a URL for the uploaded file
+      console.log('filePath', filePath);
+      // Generate a publicly accessible URL for the uploaded file.
       const fileUrl = `http://195.35.20.220:9000/uploads/${path.basename(filePath)}`;
   
       console.log('File uploaded successfully:', filePath);
-      console.log('fileUrl', fileUrl)
+      console.log('fileUrl', fileUrl);
       
-      // Include the dirs data in the response
-      const responseJson = {
+      // Prepare and send a JSON response including details about the uploaded file.
+      res.json({
         done: "ok",
         file: {
           path: filePath,
@@ -81,21 +74,15 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           size: uploadedFile.size,
           type: uploadedFile.mimetype
         },
-        dirs: dirsCache // Pass the dirs data to the response
-      };
-  
-      res.json(responseJson);
+        dirs: dirsCache // Include the cached directory information in the response.
+      });
     } catch (error) {
       console.error('Error uploading file:', error);
-  
-      // Include the dirs data in the error response
-      const errorResponseJson = {
+      // Send an error response including details of the failure.
+      res.status(500).json({
         error: "File upload failed",
         details: error.message,
-        dirs: dirsCache // Pass the dirs data to the response even in case of an error
-      };
-  
-      res.status(500).json(errorResponseJson);
+        dirs: dirsCache // Include cached directory information even in error responses.
+      });
     }
   };
-  

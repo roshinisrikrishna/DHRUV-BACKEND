@@ -1,34 +1,41 @@
+// Import necessary types from the Medusa package and axios for making HTTP requests.
 import { MedusaRequest, MedusaResponse } from "@medusajs/medusa";
 import axios from "axios";
+// Import the CustomerService for fetching customer data.
 import { CustomerService } from '@medusajs/medusa';
+// Import a custom function to handle email sending.
 import { handleEmail } from "./orderEmailSender";
 
+// Define an asynchronous function to handle POST requests.
 export async function POST(
   req: MedusaRequest,
   res: MedusaResponse
 ): Promise<void> {
   try {
+    // Resolve the CustomerService from Medusa's dependency injection container to use its methods.
     const customerService = req.scope.resolve<CustomerService>("customerService");
       
-    // Retrieve all customers using the customer service
+    // Fetch all customers using the customer service's list method.
     const customers = await customerService.list({});
     
+    // Make a GET request to a specific URL to retrieve a list of discounts.
     const response = await axios.get("http://195.35.20.220:9000/store/discountlist");
     const responseData = response.data;
 
-    // Apply the provided functions to responseData
+    // Transform the fetched discounts using a custom function not defined within this snippet.
     const transformedDiscounts = renderDiscounts(responseData.discounts);
-
     
-    // Send an email to each customer
+    // Iterate over each customer and send them an email with the discount information if they have an email address.
     for (const customer of customers) {
       if (customer.email) {
         await handleEmail(req, res, customer.email, transformedDiscounts);
       }
     }
 
+    // Respond with a success message after all emails have been sent.
     res.status(200).send({ message: "Emails sent successfully" });
   } catch (error) {
+    // Catch and log any errors that occur during the process, then respond with an error message.
     console.error("Error:", error);
     res.status(500).send({ error: "Error occurred" });
   }
@@ -115,4 +122,3 @@ const renderDiscounts = (discounts) => {
   });
 };
 
-// Now you can use `specificDiscount` for separate handling if needed.
